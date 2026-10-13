@@ -1,0 +1,2307 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0b1020" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="icon" href="icon-192.png" />
+    <title>QuizBank</title>
+    <style>
+      :root {
+        --bg: #0b1020;
+        --card: #121a2d;
+        --card2: #18233b;
+        --text: #edf2f7;
+        --muted: #aab6ca;
+        --accent: #6ea8fe;
+        --good: #38d39f;
+        --bad: #ff6b6b;
+        --border: #2a3857;
+        --star: #ffd166;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: linear-gradient(135deg, #080c18, #101a31);
+        color: var(--text);
+        font-family:
+          Inter,
+          Segoe UI,
+          Arial,
+          sans-serif;
+        min-height: 100vh;
+      }
+      .container {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 28px 18px 50px;
+      }
+      header,
+      .question-card,
+      .result {
+        background: rgba(18, 26, 45, 0.97);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 24px;
+        margin-bottom: 18px;
+        box-shadow: 0 15px 45px rgba(0, 0, 0, 0.2);
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 28px;
+      }
+      .subtitle,
+      .small {
+        color: var(--muted);
+        line-height: 1.5;
+      }
+      .toolbar,
+      .actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+        margin-top: 18px;
+      }
+      .toolbar label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+        color: var(--muted);
+        flex-wrap: wrap;
+        max-width: 100%;
+        min-width: 0;
+      }
+      select,
+      input[type="file"] {
+        max-width: 100%;
+        min-width: 0;
+      }
+      button,
+      select,
+      input[type="number"],
+      input[type="text"] {
+        border: 1px solid var(--border);
+        background: var(--card2);
+        color: var(--text);
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-size: 14px;
+        cursor: pointer;
+        font-family: inherit;
+      }
+      input[type="number"],
+      input[type="text"] {
+        cursor: text;
+        padding: 9px 10px;
+      }
+      input[type="number"] {
+        width: 78px;
+      }
+      button.primary {
+        background: var(--accent);
+        color: #07101f;
+        border-color: transparent;
+        font-weight: 700;
+      }
+      button:hover {
+        filter: brightness(1.08);
+      }
+      button.danger {
+        border-color: var(--bad);
+      }
+      .progress {
+        height: 9px;
+        background: #202b43;
+        border-radius: 99px;
+        overflow: hidden;
+        margin-top: 16px;
+      }
+      .bar {
+        height: 100%;
+        width: 0;
+        background: var(--accent);
+        transition: width 0.2s;
+      }
+      .progressText {
+        color: var(--muted);
+        font-size: 13px;
+        margin-top: 7px;
+      }
+      .qnum {
+        color: var(--accent);
+        font-weight: 700;
+        font-size: 13px;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+      }
+      .question {
+        font-size: 19px;
+        line-height: 1.55;
+        font-weight: 650;
+        margin-bottom: 18px;
+      }
+      .option {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        padding: 14px;
+        margin: 9px 0;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        cursor: pointer;
+        transition: 0.15s;
+      }
+      .option:hover {
+        background: #17223a;
+      }
+      .option input {
+        margin-top: 4px;
+        accent-color: var(--accent);
+      }
+      .option.selected {
+        border-color: var(--accent);
+        background: #172642;
+      }
+      .option.correct {
+        border-color: var(--good);
+        background: rgba(56, 211, 159, 0.1);
+      }
+      .option.wrong {
+        border-color: var(--bad);
+        background: rgba(255, 107, 107, 0.1);
+      }
+      .option.locked {
+        cursor: default;
+      }
+      .badge {
+        display: inline-block;
+        padding: 5px 9px;
+        border-radius: 99px;
+        background: #202b43;
+        color: var(--muted);
+        font-size: 12px;
+        margin-left: 7px;
+      }
+      .star {
+        background: none;
+        border: none;
+        font-size: 24px;
+        line-height: 1;
+        padding: 2px 6px;
+        color: var(--muted);
+      }
+      .star.on {
+        color: var(--star);
+      }
+      .verdict {
+        font-weight: 700;
+        margin-bottom: 6px;
+      }
+      .verdict.ok {
+        color: var(--good);
+      }
+      .verdict.no {
+        color: var(--bad);
+      }
+      #timerBox {
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        z-index: 20;
+        background: rgba(18, 26, 45, 0.96);
+        border: 1px solid var(--border);
+        border-radius: 99px;
+        padding: 8px 16px;
+        font-weight: 700;
+        font-size: 16px;
+        font-variant-numeric: tabular-nums;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+      }
+      #timerBox.low {
+        border-color: var(--bad);
+        color: var(--bad);
+      }
+      .result {
+        display: none;
+      }
+      .score {
+        font-size: 42px;
+        font-weight: 800;
+        margin: 8px 0;
+      }
+      .review {
+        margin-top: 20px;
+      }
+      .review-item {
+        padding: 13px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        margin: 9px 0;
+      }
+      .hidden {
+        display: none !important;
+      }
+      .source-answer {
+        color: var(--good);
+      }
+      .hint {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      @media (max-width: 600px) {
+        h1 {
+          font-size: 23px;
+        }
+        .question {
+          font-size: 17px;
+        }
+        .question-card,
+        header,
+        .result {
+          padding: 18px;
+        }
+        .container {
+          padding: 16px 12px 40px;
+        }
+      }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  </head>
+  <body>
+    <div id="timerBox" class="hidden"></div>
+    <div class="container">
+      <header>
+        <h1>QuizBank</h1>
+        <div class="subtitle">
+          Reusable practice exam. Pick a mode and a size, start, submit, then
+          repeat as many times as you want. Questions and choices are shuffled
+          every attempt.
+        </div>
+
+        <div class="toolbar">
+          <label
+            >Mode:
+            <select id="mode" onchange="modeChanged()">
+              <option value="exam" selected>Exam: timer + score at end</option>
+              <option value="study">Study: answer after each question</option>
+            </select>
+          </label>
+          <label
+            >Pick:
+            <select id="pick">
+              <option value="random" selected>Random questions</option>
+              <option value="first">First N — file order</option>
+              <option value="firstshuf">First N — shuffled</option>
+            </select>
+          </label>
+          <label
+            >Questions:
+            <input
+              type="number"
+              id="count"
+              min="1"
+              step="1"
+              value="50"
+              oninput="autoMins()" />
+            <span id="countHint" class="hint"></span
+          ></label>
+          <label id="minsWrap"
+            >Time (min):
+            <input
+              type="number"
+              id="mins"
+              min="0"
+              step="any"
+              value="90"
+              oninput="minsTouched = true"
+              title="0 = no timer"
+            />
+            <span class="hint">0 = no timer</span></label
+          >
+        </div>
+        <div class="toolbar">
+          <button class="primary" onclick="startTest()">
+            Start / Restart Test
+          </button>
+          <button id="starBtn" onclick="showStarred()">⭐ Starred (0)</button>
+          <button id="wrongBtn" onclick="startMistakes()">
+            🔁 Mistakes (0)
+          </button>
+          <button onclick="resetBest()">Reset Saved Scores</button>
+        </div>
+
+        <div class="toolbar">
+          <label
+            >Test set:
+            <select id="bankSel" onchange="switchBank(this.value)"></select
+          ></label>
+          <label class="small"
+            >Import PDF / Word / TXT:
+            <input
+              type="file"
+              id="fileIn"
+              accept=".pdf,.docx,.txt"
+              onchange="
+                importFile(this.files[0]);
+                this.value = '';
+              "
+          /></label>
+          <button onclick="delBank()">Delete this set</button
+          ><button onclick="restoreDefault()">Restore original</button>
+          <button class="danger" onclick="delAll()">Clean all test sets</button>
+        </div>
+        <div class="toolbar">
+          <button onclick="exportBackup()">⬇ Export backup</button>
+          <label class="small"
+            >⬆ Import backup:
+            <input
+              type="file"
+              id="bkIn"
+              accept=".json,application/json"
+              onchange="
+                importBackup(this.files[0]);
+                this.value = '';
+              "
+          /></label>
+        </div>
+        <div id="impStatus" class="small" style="margin-top: 8px"></div>
+        <div id="progressWrap" class="hidden">
+          <div class="progress"><div id="bar" class="bar"></div></div>
+          <div id="progressText" class="progressText"></div>
+        </div>
+      </header>
+
+      <div id="result" class="result"></div>
+      <div id="quiz"></div>
+      <div id="bottomActions" class="hidden actions">
+        <button class="primary" id="submitBtn" onclick="submitTest()">
+          Submit Test
+        </button>
+        <button onclick="startTest()">Restart / New Attempt</button>
+      </div>
+    </div>
+
+    <div class="container" style="padding-top: 0">
+      <div class="question-card" dir="rtl" style="text-align: right">
+        <h2 style="margin-top: 0">ملاحظات مهمة</h2>
+        <ul class="subtitle">
+          <li>الاختبارات المستوردة تبقى فقط على نفس المتصفح ونفس الجهاز.</li>
+          <li>
+            المحاولة تعتمد على تنسيق الملف، فإذا كان الملف غريب التنسيق قد
+            يُقسَّم سؤال بشكل خاطئ. لهذا توجد شاشة المراجعة.
+          </li>
+          <li>
+            يمكنك حذف أي اختبار، حتى الاختبار الأصلي، بزر
+            <b>Delete this set</b> أو حذف كل شيء بزر <b>Clean all test sets</b>.
+            ولاسترجاع الاختبار الأصلي اضغط <b>Restore original</b>.
+          </li>
+          <li>
+            لأفضل نتيجة في الاستخراج: اطلب من أي ذكاء اصطناعي (ChatGPT / Claude
+            / Gemini...) تحويل أسئلتك إلى التنسيق الصحيح بهذا الـ Prompt، ثم
+            احفظ الناتج كملف .txt أو .docx وارفعه هنا.
+          </li>
+          <li>
+            <b>وضع الامتحان:</b> عدّاد وقت والنتيجة في الآخر.
+            <b>وضع الدراسة:</b> الإجابة الصحيحة تظهر بعد كل سؤال.
+          </li>
+          <li>
+            <b>⭐ Starred:</b> علّم الأسئلة الصعبة وارجع لها في صفحة واحدة.
+            <b>🔁 Mistakes:</b> بيجمع كل أسئلتك الغلط ويشيل السؤال لما تجاوبه
+            صح.
+          </li>
+          <li>
+            <b>Export / Import backup:</b> لنقل اختباراتك وعلاماتك ونتائجك بين
+            الأجهزة والمتصفحات (الاستيراد بيدمج مع الموجود). اعمل Export قبل ما
+            تضغط Clean all.
+          </li>
+          <li>
+            عند استيراد ملف تقدر تحدد من أي سؤال لأي سؤال تاخد (مثلاً أول 10 أو
+            أول 20).
+          </li>
+        </ul>
+        <h3>Prompt للذكاء الاصطناعي</h3>
+        <button id="cpBtn" class="primary" onclick="copyPrompt()">
+          Copy prompt
+        </button>
+        <pre
+          id="aiPrompt"
+          dir="ltr"
+          style="
+            text-align: left;
+            white-space: pre-wrap;
+            background: var(--card2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px;
+            margin-top: 12px;
+            font-size: 13px;
+            line-height: 1.5;
+          "
+        >
+I will give you exam questions (from a PDF, dump, or notes). Rewrite ALL of them in the exact format below. Output plain text only: no tables, no markdown symbols (no ** or #), no extra comments.
+
+Rules:
+1. Each question starts on a new line with: Question N: followed by the question text (N = running number: 1, 2, 3...).
+2. Directly below it, write every option on its own line starting with A) B) C) D) (and E) F) if needed). One option per line.
+3. After the options, write one line: Answer: X   (example: Answer: B). If several answers are correct, write: Answer: A, C
+4. Leave one blank line between questions.
+5. Do not skip, merge, shorten or reword any question. If the correct answer is not given, work it out carefully and still provide your best answer.
+
+Example:
+Question 1: Which protocol does a SOAP web service commonly use?
+A) FTP
+B) HTTP
+C) SMTP only
+D) None of these
+Answer: B
+
+Question 2: Which TWO are valid options?
+A) Option one
+B) Option two
+C) Option three
+D) Option four
+Answer: A, C
+
+Now convert the following questions:
+[paste your questions here]</pre
+        >
+      </div>
+    </div>
+    <script>
+      const BUILTIN = [
+        {
+          num: 1,
+          question:
+            "Which statement is NOT valid concerning file operation capabilities with regard to restrictions on using Stage File Action operations with the file and attachment features of the Connectivity Agent?",
+          options: [
+            {
+              text: "○ Files uploaded through the Connectivity Agent are not available with the List File operation.",
+              correct: false,
+            },
+            {
+              text: "○ Files uploaded through the Connectivity Agent are not available with the Zip File operation.",
+              correct: false,
+            },
+            {
+              text: "○ Files uploaded through the Connectivity Agent can only be read with a file reference, with regard to both the Read Entire File and Read File in Segments operations.",
+              correct: false,
+            },
+            {
+              text: "○ Files uploaded through the Connectivity Agent cannot be unzipped using a file reference.",
+              correct: true,
+            },
+          ],
+        },
+        {
+          num: 2,
+          question:
+            "Which set of operations are supported in the invoke role when leveraging access via a Connectivity agent?",
+          options: [
+            { text: "read, write, list", correct: false },
+            { text: "read, write, list, move, download", correct: false },
+            { text: "read, write, list, move", correct: false },
+            {
+              text: "read, write, list, move, download, delete",
+              correct: true,
+            },
+            { text: "read, write", correct: false },
+          ],
+        },
+        {
+          num: 3,
+          question:
+            "When leveraging the OIC Connectivity Agent for high availability on-premises environments, which two are valid considerations?",
+          options: [
+            {
+              text: "You should install the connectivity agents on the same host as the target application...",
+              correct: false,
+            },
+            {
+              text: "You must have the OIC ServiceDeployer role or higher permissions...",
+              correct: false,
+            },
+            {
+              text: "Each host on which the agent is installed must be configured on separate subnets...",
+              correct: false,
+            },
+            {
+              text: "You cannot have more than two Agent instances per Agent group...",
+              correct: true,
+            },
+            {
+              text: "Since the File Adapter is not supported in high-availability environments...",
+              correct: true,
+            },
+          ],
+        },
+        {
+          num: 4,
+          question:
+            "Which is a legitimate strategy to mitigate timeout issues in a synchronous OIC integration flow?",
+          options: [
+            {
+              text: "Modify the integration flow to include retry logic...",
+              correct: false,
+            },
+            { text: "Increase the blocking timeout...", correct: false },
+            {
+              text: "Change the design implementation strategy to an asynchronous flow...",
+              correct: true,
+            },
+            {
+              text: "Change the implementation logic to invoke multiple fine-grained API calls...",
+              correct: false,
+            },
+          ],
+        },
+        {
+          num: 5,
+          question:
+            "What is the primary purpose of Connection resources in OIC?",
+          options: [
+            {
+              text: "To transform data between source and target applications...",
+              correct: false,
+            },
+            {
+              text: "To define and configure the endpoints for applications that an integration interacts with",
+              correct: true,
+            },
+            {
+              text: "To define the schedule and frequency of integrations...",
+              correct: false,
+            },
+            {
+              text: "To enable automated scaling of integration flows...",
+              correct: false,
+            },
+          ],
+        },
+        {
+          num: 6,
+          question:
+            "Which statement accurately describes the use of business identifiers in integrations?",
+          options: [
+            {
+              text: "They are used to track and monitor specific fields in messages, helping to identify and troubleshoot issues during the integration process.",
+              correct: true,
+            },
+            {
+              text: "They are utilized to encrypt sensitive data being transferred between applications.",
+              correct: false,
+            },
+            {
+              text: "Business identifiers are primarily for managing user roles and permissions within integrations.",
+              correct: false,
+            },
+            {
+              text: "Business identifiers are used exclusively for defining data transformations between applications.",
+              correct: false,
+            },
+          ],
+        },
+        {
+          num: 7,
+          question:
+            "Which is NOT a valid statement concerning Logger action capabilities?",
+          options: [
+            {
+              text: "You can create a log that is a static message or a variable-populated message.",
+              correct: false,
+            },
+            {
+              text: "You can select to disable logging when the integration’s tracing level is set to Production.",
+              correct: false,
+            },
+            {
+              text: "It will automatically log messages to the activity stream and diagnostic logs.",
+              correct: true,
+            },
+            {
+              text: "It can be configured to also send log messages to an external logging service.",
+              correct: false,
+            },
+          ],
+        },
+        {
+          num: 8,
+          question:
+            "Which implementation strategy best satisfies the requirement to return a custom business fault message for synchronous OIC flows?",
+          options: [
+            {
+              text: "Implement a Scope fault handler to catch the runtime fault, and then use the Fault Return action providing mapped data for the custom fault.",
+              correct: true,
+            },
+            {
+              text: "Implement the Global fault handler to catch the runtime fault, and then use the Re- throw Fault action...",
+              correct: false,
+            },
+            {
+              text: "Create a custom Scope fault handler to catch the runtime fault, and then use the Re- throw Fault action...",
+              correct: false,
+            },
+            {
+              text: "Implement a Scope fault handler to catch the runtime fault, then allow the Global fault handler...",
+              correct: false,
+            },
+          ],
+        },
+        {
+          num: 9,
+          question:
+            "Which is NOT an alert type that can be configured in OIC notification emails?",
+          options: [
+            {
+              text: "Certificates that are set to expire within seven days.",
+              correct: false,
+            },
+            {
+              text: "The email quota has exceeded the threshold.",
+              correct: true,
+            },
+            {
+              text: "Failed instances exceeding a specified percentage.",
+              correct: false,
+            },
+            {
+              text: "One or more connectivity agents are unavailable.",
+              correct: false,
+            },
+          ],
+        },
+        {
+          num: 10,
+          question:
+            "You are working on an integration within Oracle Integration Cloud (OIC) that includes several connections to external systems. As part of your development work, you need to implement global fault handling to ensure that any unexpected errors are caught and handled correctly. Which approach can you use to implement fault handling in OIC?",
+          options: [
+            {
+              text: "Create a separate fault handling integration...",
+              correct: false,
+            },
+            {
+              text: "Open the Global Fault Handler page on the integration canvas and add actions to handle faults.",
+              correct: true,
+            },
+            {
+              text: "Use the Throw New Fault action within your integration flow...",
+              correct: false,
+            },
+            {
+              text: "Add a Try-Catch action to your integration flow...",
+              correct: false,
+            },
+          ],
+        },
+        {
+          num: 11,
+          question:
+            "Which interaction pattern is NOT used for SOAP web services?",
+          options: [
+            { text: "Synchronous Request/Reply", correct: false },
+            { text: "Asynchronous One-Way", correct: false },
+            { text: "Publish/Subscribe", correct: true },
+          ],
+        },
+        {
+          num: 12,
+          question:
+            "Which statement accurately describes the purpose of WSDL in web services?",
+          options: [
+            {
+              text: "WSDL is used to format the data exchanged between web services and clients.",
+              correct: true,
+            },
+            {
+              text: "WSDL is a protocol used for securing web services communication.",
+              correct: false,
+            },
+            {
+              text: "WSDL is a language used for creating web services from scratch.",
+              correct: false,
+            },
+            {
+              text: "WSDL defines the network endpoints and message formats for web services.",
+              correct: false,
+            },
+          ],
+        },
+        {
+          num: 13,
+          question:
+            "Which statement regarding the management of tracing level options for integrations is invalid?",
+          options: [
+            {
+              text: "You can change the tracing level on an activate integration without having to deactivate and reactivate it.",
+              correct: false,
+            },
+            {
+              text: "The tracing level has no impact on billing.",
+              correct: true,
+            },
+            {
+              text: "Changing tracing to the audit or debug level impacts performance.",
+              correct: false,
+            },
+            {
+              text: "If you select to globally disable tracing for all integrations, you can still enable tracing at the individual integration level.",
+              correct: false,
+            },
+          ],
+        },
+        {
+          num: 14,
+          question:
+            "Which set of steps should you follow to leverage a custom SbA library function in OIC?",
+          options: [
+            {
+              text: "Import the JavaScript library file into your OIC instance’s database schema...",
+              correct: false,
+            },
+            {
+              text: "Copy and paste the JavaScript function code into a newJavaScriptstage within the integration flow...",
+              correct: false,
+            },
+            {
+              text: "Use the Function Call action within the integration flow...",
+              correct: false,
+            },
+            {
+              text: "Import the JavaScript library file to the OIC Console, and then use the JavaScript action within the integration flow to reference the library function",
+              correct: true,
+            },
+          ],
+        },
+        {
+          num: 15,
+          question:
+            "Which consideration regarding JavaScript library functions is NOT valid?",
+          options: [
+            {
+              text: "Active integrations using a function that has been updated must be reactivated.",
+              correct: false,
+            },
+            {
+              text: "JavaScript functions are not allowed to make outbound calls to external services.",
+              correct: true,
+            },
+            {
+              text: "Network, disk, or thread access is not supported from within a JavaScript function.",
+              correct: false,
+            },
+            {
+              text: "The JavaScript action has a timeout threshold of 60 seconds.",
+              correct: false,
+            },
+          ],
+        },
+        {
+          num: 16,
+          question: "Which statement is valid regarding OIC Lookups?",
+          options: [
+            {
+              text: "Lookup values are retrieved from a backend database at run time.",
+              correct: false,
+            },
+            {
+              text: "You cannot clone an existing Lookup if it is being currently referenced...",
+              correct: false,
+            },
+            {
+              text: "Lookup values must include two or more domains associated with SaaS application adapters.",
+              correct: false,
+            },
+            {
+              text: "An OIC XPath function must be used to retrieve data from Lookups in the Map Editor.",
+              correct: true,
+            },
+          ],
+        },
+        {
+          num: 17,
+          question:
+            "Which OIC XPath function can be used to retrieve data from an OIC Lookup within the Map Editor?",
+          options: [
+            { text: "lookupValue", correct: true },
+            { text: "getLookup", correct: false },
+            { text: "get-value-from-lookup", correct: false },
+            { text: "get-content-as-string", correct: false },
+          ],
+        },
+        {
+          num: 18,
+          question:
+            "Which statement best describes the purpose of using the Switch action in OIC integration flows?",
+          options: [
+            {
+              text: "It is designed specifically for error handling within the integration.",
+              correct: false,
+            },
+            {
+              text: "It is used to execute tasks in parallel and run them simultaneously.",
+              correct: false,
+            },
+            {
+              text: "It enables the integration to execute different conditional branches of logic based on evaluated expressions.",
+              correct: true,
+            },
+            {
+              text: "It simplifies the transformation and mapping of complex data structures.",
+              correct: false,
+            },
+          ],
+        },
+        {
+          num: 19,
+          question:
+            "How do you configure the For each action to process multiple orders individually?",
+          options: [
+            {
+              text: "Select the Group By option separating the orders by their order number.",
+              correct: false,
+            },
+            {
+              text: "Select the Sequential Processing option and set the number of threads to the number of orders.",
+              correct: false,
+            },
+            {
+              text: "Select the Repeating Element field and map the source element that contains the orders.",
+              correct: true,
+            },
+            {
+              text: "Select the Parallel Processing option and set the number of threads to the number of orders.",
+              correct: false,
+            },
+          ],
+        },
+        {
+          num: 20,
+          question:
+            "What is the purpose of adding and configuring a Wait action in a Schedule pattern integration flow?",
+          options: [
+            {
+              text: "It is used to suspend processing within the integration flow.",
+              correct: true,
+            },
+            {
+              text: "It can be configured to loop through elements until a condition is met.",
+              correct: false,
+            },
+            {
+              text: "It is used to schedule integration runs at specific times.",
+              correct: false,
+            },
+            {
+              text: "It is used to trigger an error after a specified duration.",
+              correct: false,
+            },
+          ],
+        },
+        {
+          num: 21,
+          question:
+            "You have a use case that requires processing a large data extract more than 10 MB in size. You will be using the Stage File action's Read File in Segments operation to read the records into memory. Which three are valid options for getting the file data into your integration flow?",
+          options: [
+            {
+              text: "Send the file as a multipart attachment to an integration designed to use a REST trigger.",
+              correct: true,
+            },
+            {
+              text: "Retrieve the file by invoking a SOAP web service that returns the base64 encoded data within the SOAP body, then decode the data in the Map Editor.",
+              correct: false,
+            },
+            {
+              text: "Upload the file to the OIC embedded File Server, then use an FTP Adapter Download File operation from the integration.",
+              correct: true,
+            },
+            {
+              text: "Retrieve the file by invoking a REST API that supports application/blob as the content type.",
+              correct: false,
+            },
+            {
+              text: "Retrieve the file by invoking a SOAP web service that returns it as an MTOM attachment.",
+              correct: true,
+            },
+          ],
+        },
+        {
+          num: 22,
+          question:
+            "Oracle Integration (OIC) provides the File Server feature, which is an embedded SFTP server that enables organizations to focus on building integrations without the need to host and maintain a separate SFTP server. Which statement about the OIC File Server feature is NOT valid?",
+          options: [
+            {
+              text: "Access to the OIC File Server Management REST APIs is limited to users that have been granted the ServiceAdministrator role.",
+              correct: true,
+            },
+            {
+              text: "The OIC File Server is disabled by default in a newly provisioned OIC instance.",
+              correct: false,
+            },
+            {
+              text: "Any external SFTP client can access a File Server if an OIC administrator has configured specific folder access permissions for that client.",
+              correct: false,
+            },
+            {
+              text: "Within an integration flow, a File Server action can be used only to read existing files, whereas an FTP adapter connection is required for file write access.",
+              correct: false,
+            },
+          ],
+        },
+        {
+          num: 23,
+          question:
+            "You need to create an Oracle Integration (OIC) integration that processes many records individually that are contained within a single large file. You have been advised to use an implementation approach that uses the Download File operation of an FTP adapter in conjunction with the Stage File action Read File in Segments operation to mitigate issues with memory consumption. When using this approach, which is a valid consideration regarding the use of the Read File in Segments operation?",
+          options: [
+            {
+              text: "You need to explicitly configure a Scope action for this operation if you want to add additional actions during the processing of each segment.",
+              correct: true,
+            },
+            {
+              text: "Segment sizes can be configured from 1-200 records.",
+              correct: false,
+            },
+            {
+              text: "You must provide the actual filename because file references cannot be processed by the Read File in Segments operation.",
+              correct: false,
+            },
+            {
+              text: "TheRead FileinSegments operation allows you to process the segments sequentially or in parallel.",
+              correct: false,
+            },
+          ],
+        },
+        {
+          num: 24,
+          question:
+            "One of your downstream applications is becoming overwhelmed with too many individual synchronous invocations from your current Oracle Integration (OIC) integration. It is recommended that you redesign the integration to take advantage of the batch processing capabilities of that application. Which approach is a valid OIC design best practice that will provide the best solution for this issue?",
+          options: [
+            {
+              text: "Create a custom batch call function, register the function as a Library in your OIC environment, then use the Javascript call action to invoke the application.",
+              correct: false,
+            },
+            {
+              text: "Use the Append option in the Write File operation of the Stage File action within a loop to create a single batch file to be sent to the application.",
+              correct: true,
+            },
+            {
+              text: "Reactivate the integration and use the disable tracing and message tracking option, which will optimize performance for each invocation to the application.",
+              correct: false,
+            },
+            {
+              text: "Throttle the individual synchronous calls by adding a Wait activity prior to each invocation to the application within the loop, then fetch a batch response after the loop.",
+              correct: false,
+            },
+          ],
+        },
+        {
+          num: 25,
+          question:
+            "You are an Oracle Integration (OIC) integration developer tasked with automating a data exchange process between two systems: System A and System B. System A generates daily CSV files containing transaction records, and these files need to be processed by System B for further analysis and reporting. You need to design and implement an integration that will handle these CSV files efficiently and ensure they are correctly processed by System B. Here are the requirements: The integration should pick up CSV files from a specific directory on a secure FTP server. After processing, the files should be archived in a different directory for auditing purposes. If a file fails to process, it should be moved to an error directory for troubleshooting. The integration should send a notification email to the Operations team upon successful or failed processing of the files. Which set of steps should you follow to implement the file handling options to meet these requirements?",
+          options: [
+            {
+              text: "Configure a Scheduled Integration in OIC to periodically check the secure FTP server directory using the FTP Adapter, process the files by invoking System B, and move them to the archive or error directory based on the processing outcome. Use the Notification action to send emails to the Operations team.",
+              correct: true,
+            },
+            {
+              text: "Use the FTP Adapter to read the files from the secure FTP server directory to trigger the integration, process the files by invoking System B, and move them to the archive or error directory based on the processing outcome. Configure the Notification action to send emails to the Operations team.",
+              correct: false,
+            },
+            {
+              text: "Use the File Adapter to read the files from the secure FTP server directory to trigger the integration, process the files by using Stage File Action operations System B, and use the FTP Adapter to move them to the archive or error directory based on the processing outcome. Use the Notification action to send...",
+              correct: false,
+            },
+          ],
+        },
+        {
+          num: 26,
+          question:
+            "The Oracle Integration (OIC) integration design editor provides a data mapper UI tool that is available for Map actions. Which two statements are TRUE regarding the use of the Mapper tool?",
+          options: [
+            {
+              text: "You cannot drag and drop an XPath function activity directly to a target node element.",
+              correct: false,
+            },
+            {
+              text: "You cannot drag and drop a source data element to a target node element that is already mapped.",
+              correct: false,
+            },
+            {
+              text: "You can drag and drop a source data element to multiple target node elements.",
+              correct: true,
+            },
+            {
+              text: "You cannot drag and drop an XSLT flow control statement directly to a target node element.",
+              correct: true,
+            },
+          ],
+        },
+        {
+          num: 27,
+          question:
+            "When creating integrations in Oracle Integration (OIC), a visual mapper enables you to map element nodes between applications by dragging source element nodes on to target element nodes. Which statement is NOT true about the OIC Data Mapper functionality?",
+          options: [
+            {
+              text: "In the Designer view, the Sources section contains data structures of all available data objects, which includes integration metadata, tracking variables, global variables, and integration property values.",
+              correct: false,
+            },
+            {
+              text: "The data structure for the target service is always displayed on the right side in the Designer view.",
+              correct: false,
+            },
+            {
+              text: "All Source and Target data objects are represented internally as JSON structures.",
+              correct: true,
+            },
+            {
+              text: "All transformation mappings use eXtensible Stylesheet Language (XSL).",
+              correct: false,
+            },
+          ],
+        },
+        {
+          num: 28,
+          question:
+            "CSV-formatted data has been extracted from Oracle ERP Cloud by invoking a web service using the SOAP Adapter, and the data extract has been returned as an MTOM attachment. You now need to send this CSV file to an external REST API that supports accepting this content as a Base64 encoded string. Which is a valid solution offering the best performance?",
+          options: [
+            {
+              text: "Map the received MTOM attachment directly to the REST adapter invoke map action using the encodeReferenceToBase64 function.",
+              correct: true,
+            },
+            {
+              text: "Create an NXSD in Oracle JDeveloper to define the schema of the CSV and use it to map the transformed data to the REST adapter invoke map action.",
+              correct: false,
+            },
+            {
+              text: "Use the REST adapter configuration wizard to define the structure of the CSV when configuring the invoke connection, then map the MTOM attachment directly.",
+              correct: false,
+            },
+            {
+              text: "Create and register a JavaScript function to convert the contents, invoke it using the JavaScript call action, then map the result to the REST adapter invoke map action.",
+              correct: false,
+            },
+          ],
+        },
+        {
+          num: 29,
+          question:
+            "You have designed and implemented an integration flow that uses a REST Adapter trigger connection configured with multiple operations. Which statement is valid concerning the Test page?",
+          options: [
+            {
+              text: "The Test page will display only GET method operations. You can execute only those operations.",
+              correct: false,
+            },
+            {
+              text: "The Test page is not available for integrations using multiple operations. You will need to use a third-party test client such as Postman.",
+              correct: false,
+            },
+            {
+              text: "The Test page will display a list of all configured operations. You can execute any operation.",
+              correct: true,
+            },
+            {
+              text: "The Test page will display only the initial operation that was configured. You can only execute that operation.",
+              correct: false,
+            },
+          ],
+        },
+        {
+          num: 30,
+          question:
+            "In addition to REST trigger connection-based integrations, what other type of integration can you run from the Test page in Oracle Integration?",
+          options: [
+            {
+              text: "File trigger connection-based integrations",
+              correct: false,
+            },
+            {
+              text: "SOAP trigger connection-based integrations",
+              correct: true,
+            },
+            { text: "Schedule pattern integrations", correct: false },
+            { text: "Event pattern integrations", correct: false },
+          ],
+        },
+        {
+          num: 31,
+          question:
+            "When creating a new Oracle Integration (OIC) Connection resource, there are several steps to complete before it is fully configured and can be used in an integration flow. Which task is NOT required in order to transition a new Connection resource from the Draft to a Configured state?",
+          options: [
+            { text: "Configure the Connection properties.", correct: false },
+            { text: "Specify the Connection role.", correct: false },
+            { text: "Specify the corresponding Lookup.", correct: true },
+            { text: "Specify an adapter type.", correct: false },
+            {
+              text: "Execute a successful test of the Connection.",
+              correct: false,
+            },
+            { text: "Configure the Security properties.", correct: false },
+          ],
+        },
+        {
+          num: 32,
+          question:
+            "Which Oracle Integration (OIC) adapter can be used to create a configured connection within an integration allowing you to send a file to the embedded File Server associated within the same OIC environment?",
+          options: [
+            { text: "Local Adapter", correct: false },
+            { text: "File Adapter", correct: false },
+            { text: "REST Adapter", correct: false },
+            { text: "FTP Adapter", correct: true },
+          ],
+        },
+        {
+          num: 33,
+          question:
+            "Which statement is valid regarding Connection resources in Oracle Integration (OIC)?",
+          options: [
+            {
+              text: "Connection resources can be configured with either a Trigger role or an Invoke role, but not both.",
+              correct: false,
+            },
+            {
+              text: "All Connection resources must be associated with an adapter type, regardless of role configuration.",
+              correct: true,
+            },
+            {
+              text: "All Connection configurations require the association of an active OIC Connectivity Agent group.",
+              correct: false,
+            },
+            {
+              text: "Connection resources associated with an Oracle SaaS adapter type require a Lookup configuration.",
+              correct: false,
+            },
+          ],
+        },
+        {
+          num: 34,
+          question:
+            "Which two statements are TRUE regarding messaging adapters in Oracle Integration (OIC)?",
+          options: [
+            {
+              text: "Both the Apache Kafka and OCI Streaming adapters support XML, JSON, and Avro message formats.",
+              correct: true,
+            },
+            {
+              text: "The OCI Streaming Adapter does not support consuming messages from a specified consumer group.",
+              correct: false,
+            },
+            {
+              text: "The Apache Kafka Adapter can be configured to support Transactions in case of Producer.",
+              correct: true,
+            },
+            {
+              text: "It is not mandatory to install a Connectivity agent to use the OCI Streaming Adapter for Inbound polling.",
+              correct: false,
+            },
+          ],
+        },
+        {
+          num: 35,
+          question:
+            "You are designing a new integration in Oracle Integration (OIC) that needs to expose a RESTful interface for client applications. Which is a valid consideration when choosing request and response options using the REST Adapter Endpoint Configuration Wizard?",
+          options: [
+            {
+              text: "Both standard and custom HTTP headers can be defined for both the request and the response.",
+              correct: true,
+            },
+            {
+              text: "If you select a PUT or POST action (HTTP method), you must define a JSON response payload format.",
+              correct: true,
+            },
+            {
+              text: "Although you can define both query and template parameters, only template parameters are available for mapping in the mapper because query parameters are optional.",
+              correct: false,
+            },
+            {
+              text: "File attachments can be accepted as a request option for the Trigger interface, but you cannot include attachments as a response to the client.",
+              correct: false,
+            },
+          ],
+        },
+        {
+          num: 36,
+          question:
+            "You are an Oracle Integration (OIC) specialist working on a project to integrate two systems using OIC. Although the integration tested successfully in the development environment, you notice that the integration instance fails to execute in production and returns an error message. Which step would you first take to troubleshoot the issue?",
+          options: [
+            {
+              text: "Immediately restart the integration instance.",
+              correct: false,
+            },
+            {
+              text: "Check the instance activity stream for specific error messages and details.",
+              correct: true,
+            },
+            { text: "Contact Oracle Support.", correct: false },
+            {
+              text: "Increase the number of instances to handle the error.",
+              correct: false,
+            },
+          ],
+        },
+        {
+          num: 37,
+          question:
+            "Where in the Observability pages can you view aggregated instance metrics for an integration, such as the total counts and the minimum (quickest), maximum (slowest), average (mean), and standard (largest) deviation execution times for a selected time period?",
+          options: [
+            {
+              text: "The View Statistics icon of the integration on the Instances page",
+              correct: false,
+            },
+            {
+              text: "The View Statistics icon of the integration on the Monitor Integrations page",
+              correct: true,
+            },
+            {
+              text: "The Statistics icon of the integration in the Overview section of the Dashboards page",
+              correct: false,
+            },
+            {
+              text: "The Statistics icon in the integration’s activity stream on the Errors page",
+              correct: false,
+            },
+          ],
+        },
+        {
+          num: 38,
+          question:
+            "Which statement best describes how Observability features enhance the monitoring of integrations at runtime?",
+          options: [
+            {
+              text: "Observability features are used to create custom dashboards for monitoring the financial impact of integrations.",
+              correct: false,
+            },
+            {
+              text: "Observability features provide geographical tracking of integration executions to ensure compliance with data residency laws.",
+              correct: false,
+            },
+            {
+              text: "Observability features focus on backing up integration configurations and ensuring data integrity.",
+              correct: false,
+            },
+            {
+              text: "Observability features allow for detailed insight into integration performance, including metrics such as response times, error rates, and throughput.",
+              correct: true,
+            },
+          ],
+        },
+        {
+          num: 39,
+          question:
+            "GlobalTech Corporation uses Oracle Integration (OIC) to synchronize data between their CRM and ERP systems. They currently have a schedule pattern integration that runs nightly at 3 AM. With the implementation of a new CRM system that supports real-time data synchronization, GlobalTech wants to update their ERP system immediately after any data changes in the CRM. To achieve this, they wish to convert the schedule integration to an application pattern integration, allowing the CRM system to explicitly call the integration upon data changes. With regard to this type of conversion, which statement is FALSE?",
+          options: [
+            {
+              text: "During conversion, you must choose an existing REST Adapter trigger connection resource.",
+              correct: false,
+            },
+            {
+              text: "You cannot convert a scheduled integration with assignments that have the fault data type.",
+              correct: false,
+            },
+            {
+              text: "You cannot convert a scheduled integration to a REST Adapter-triggered integration with multiple verbs.",
+              correct: true,
+            },
+            {
+              text: "After conversion, existing scheduled parameters will be automatically converted to integration properties.",
+              correct: false,
+            },
+          ],
+        },
+        {
+          num: 40,
+          question:
+            "Which Oracle Integration (OIC) service role does NOT have permission to run an OIC integration flow?",
+          options: [
+            { text: "ServiceDeveloper", correct: false },
+            { text: "ServiceAdministrator", correct: false },
+            { text: "ServiceUser", correct: false },
+            { text: "ServiceMonitor", correct: true },
+          ],
+        },
+        {
+          num: 41,
+          question:
+            "Oracle Integration (OIC) integrations can be exported so that later they can be imported into another OIC environment. Which statement is NOT valid regarding the import and export of OIC integrations?",
+          options: [
+            {
+              text: "Exported integrations include all their dependent connection resource information except URLs and credentials.",
+              correct: false,
+            },
+            {
+              text: "Imported integrations cannot be immediately activated if their dependent connection resources are not already present in the target OIC environment.",
+              correct: false,
+            },
+            {
+              text: "Imported integrations can be reconfigured to use different connection resources by using the OIC REST API.",
+              correct: false,
+            },
+            {
+              text: "Integrations must be exported as a project deployment if you want to import them into another OIC environment.",
+              correct: true,
+            },
+          ],
+        },
+        {
+          num: 42,
+          question:
+            "Which statement is NOT valid with regard to exporting and importing an Oracle Integration (OIC) project?",
+          options: [
+            {
+              text: "You must deactivate the project before it can be exported.",
+              correct: true,
+            },
+            {
+              text: "When you import a project, you can specify that anyone can edit, view, and monitor the project.",
+              correct: false,
+            },
+            {
+              text: "You cannot import a project into an OIC instance that already includes a matching project deployment.",
+              correct: false,
+            },
+            {
+              text: "A project deployment is required before you can export a project.",
+              correct: false,
+            },
+          ],
+        },
+        {
+          num: 43,
+          question:
+            "What is the maximum number of scheduled parameters that can be created and used in a Schedule pattern integration flow?",
+          options: [
+            { text: "No limit", correct: false },
+            { text: "5", correct: true },
+            { text: "3", correct: false },
+            { text: "10", correct: false },
+          ],
+        },
+        {
+          num: 44,
+          question:
+            "Which of the following statements about invoking integrations in Oracle Integration (OIC) projects is FALSE?",
+          options: [
+            {
+              text: "A project integration can invoke a child integration within the same project, even if the child integration is not configured as publicly available.",
+              correct: false,
+            },
+            {
+              text: "A project integration that is not configured as available to other projects can only be invoked by a parent integration from within the same project.",
+              correct: false,
+            },
+            {
+              text: "A globally available integration (created outside of a project) can invoke child integrations inside any project without additional configuration.",
+              correct: true,
+            },
+            {
+              text: "A globally available integration (created outside of a project) can be invoked by any other globally available integration, provided they are properly configured and activated.",
+              correct: false,
+            },
+          ],
+        },
+        {
+          num: 45,
+          question:
+            'What is the primary function of "Recipes" in Oracle Integration (OIC)?',
+          options: [
+            {
+              text: "To provide prebuilt integration templates for common use cases",
+              correct: true,
+            },
+            {
+              text: "To create and manage custom APIs for integrations",
+              correct: false,
+            },
+            {
+              text: "To automate the deployment of integration projects to production",
+              correct: false,
+            },
+            {
+              text: "To generate real-time analytics and performance reports",
+              correct: false,
+            },
+          ],
+        },
+        {
+          num: 46,
+          question:
+            "What is the minimum frequency limit for a simple integration schedule?",
+          options: [
+            { text: "30 minutes", correct: false },
+            { text: "5 minutes", correct: false },
+            { text: "60 minutes", correct: false },
+            { text: "No limit", correct: false },
+            { text: "10 minutes", correct: true },
+          ],
+        },
+        {
+          num: 47,
+          question:
+            "When defining the frequency for schedule pattern integration runs, you can choose to create a simple or more advanced schedule based on an expression language. Which expression syntax must be used?",
+          options: [
+            { text: "cron", correct: false },
+            { text: "CEL", correct: false },
+            { text: "iCal", correct: true },
+            { text: "Groovy", correct: false },
+          ],
+        },
+        {
+          num: 48,
+          question:
+            "You are configuring an Oracle ERP Cloud adapter connection invoke action within an Oracle Integration (OIC) integration and have selected to browse by Business (REST) resources. Once you have selected the parent resource, how many child resources can you select?",
+          options: [
+            { text: "5", correct: false },
+            { text: "10", correct: true },
+            { text: "Unlimited", correct: false },
+            { text: "7", correct: false },
+          ],
+        },
+        {
+          num: 49,
+          question:
+            "The Oracle Integration (OIC) Autonomous Transaction Processing (ATP) and Autonomous Data Warehouse (ADW) adapters support bulk load operations natively. Which statement is valid?",
+          options: [
+            {
+              text: "After the Bulk Data load operation is complete, the file can be deleted from OCI Object storage.",
+              correct: true,
+            },
+            {
+              text: "The Bulk Data load operation supports only files that are comma delimited.",
+              correct: false,
+            },
+            {
+              text: "The Bulk Data load operation creates a bucket dynamically in OCI Object Storage to store the file if not already created.",
+              correct: false,
+            },
+            {
+              text: "The Bulk Data load operation also requires selecting Multiple Insert statements.",
+              correct: false,
+            },
+          ],
+        },
+        {
+          num: 50,
+          question:
+            "Which is NOT an available option when configuring an Oracle ERP Cloud adapter to use in an Oracle Integration (OIC) integration?",
+          options: [
+            {
+              text: "Query, Create, Update, or Delete Information",
+              correct: false,
+            },
+            { text: "Extract Bulk data from ERP Cloud", correct: false },
+            { text: "Send Files to ERP Cloud", correct: false },
+            {
+              text: "Receive Business Events raised within ERP Cloud",
+              correct: true,
+            },
+          ],
+        },
+      ];
+
+      /* ---------- storage helpers ---------- */
+      const LS = {
+        get(k, d) {
+          try {
+            const v = localStorage.getItem(k);
+            return v === null ? d : v;
+          } catch (e) {
+            return d;
+          }
+        },
+        set(k, v) {
+          try {
+            localStorage.setItem(k, v);
+          } catch (e) {}
+        },
+        del(k) {
+          try {
+            localStorage.removeItem(k);
+          } catch (e) {}
+        },
+      };
+      const J = (k, d) => {
+        try {
+          const v = JSON.parse(LS.get(k, "null"));
+          return v == null ? d : v;
+        } catch (e) {
+          return d;
+        }
+      };
+      const $ = (id) => document.getElementById(id);
+      function shuffle(arr) {
+        const a = [...arr];
+        for (let i = a.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+      }
+      function escapeHtml(s) {
+        return String(s).replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#039;",
+            })[c],
+        );
+      }
+      const qKey = (q) => {
+        let h = 5381;
+        const s = q.question;
+        for (let i = 0; i < s.length; i++)
+          h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+        return "k" + (h >>> 0).toString(36);
+      };
+      const plain = (q) => ({
+        num: q.num,
+        question: q.question,
+        options: q.options.map((o) => ({ text: o.text, correct: !!o.correct })),
+      });
+      const nCor = (q) => q.options.filter((o) => o.correct).length;
+      const fmt = (s) =>
+        Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+
+      /* ---------- state ---------- */
+      let test = [],
+        submitted = false,
+        curMode = "exam",
+        timerInt = null,
+        deadline = 0,
+        startedAt = 0,
+        attemptWrong = [],
+        minsTouched = false,
+        best = 0;
+      let banks = J("oicBanks", []),
+        curId = LS.get("oicCur", "builtin"),
+        BANK = BUILTIN,
+        hideB = LS.get("oicHideB", "0") == "1";
+      let stars = J("oicStars", {}),
+        wrongPool = J("oicWrong", {}),
+        draft = [],
+        draftName = "",
+        dFrom = 1,
+        dTo = 0;
+      const persist = () => {
+        LS.set("oicBanks", JSON.stringify(banks));
+        LS.set("oicCur", curId);
+        LS.set("oicHideB", hideB ? "1" : "0");
+      };
+      const saveStars = () => LS.set("oicStars", JSON.stringify(stars));
+      const saveWrong = () => LS.set("oicWrong", JSON.stringify(wrongPool));
+      const bestKey = () =>
+        curId == "builtin" ? "oicBestPct" : "oicBestPct_" + curId;
+      const allBanks = () =>
+        (hideB
+          ? []
+          : [{ id: "builtin", name: "Original dump (built-in)", bank: BUILTIN }]
+        ).concat(banks);
+      const curName = () =>
+        (allBanks().find((b) => b.id == curId) || {}).name || "";
+      function counts() {
+        $("starBtn").textContent =
+          "⭐ Starred (" + Object.keys(stars).length + ")";
+        $("wrongBtn").textContent =
+          "🔁 Mistakes (" + Object.keys(wrongPool).length + ")";
+      }
+
+      /* ---------- test sets ---------- */
+      function selectBank(id) {
+        const all = allBanks(),
+          b = all.find((x) => x.id == id) || all[0];
+        if (b) {
+          curId = b.id;
+          BANK = b.bank;
+        } else {
+          curId = "";
+          BANK = [];
+        }
+        best = Number(LS.get(bestKey(), 0));
+        persist();
+        fillBanks();
+        fillCount();
+      }
+      function fillBanks() {
+        const a = allBanks();
+        $("bankSel").innerHTML = a.length
+          ? a
+              .map(
+                (b) =>
+                  `<option value="${b.id}" ${b.id == curId ? "selected" : ""}>${escapeHtml(b.name)} (${b.bank.length})</option>`,
+              )
+              .join("")
+          : "<option>— no test sets, import one —</option>";
+      }
+      function fillCount() {
+        const n = BANK.length,
+          c = $("count");
+        c.max = n;
+        if (c.dataset.set != curId || !(+c.value > 0) || +c.value > n)
+          c.value = n;
+        c.dataset.set = curId;
+        $("countHint").textContent = n ? "of " + n : "";
+        autoMins();
+      }
+      function autoMins() {
+        if (!minsTouched)
+          $("mins").value = Math.ceil((+$("count").value || 0) * 1.8);
+      }
+      function modeChanged() {
+        $("minsWrap").classList.toggle("hidden", $("mode").value != "exam");
+      }
+      function resetView() {
+        stopTimer();
+        $("timerBox").classList.add("hidden");
+        test = [];
+        submitted = false;
+        $("result").style.display = "none";
+        $("progressWrap").classList.add("hidden");
+        $("bottomActions").classList.add("hidden");
+        $("quiz").innerHTML =
+          '<div class="question-card"><div class="question">Ready?</div><div class="small">Choose the mode and the number of questions, then click <b>Start / Restart Test</b>.</div></div>';
+      }
+      function switchBank(id) {
+        selectBank(id);
+        resetView();
+      }
+      function delBank() {
+        if (!curId) return alert("Nothing to delete.");
+        if (!confirm("Delete this test set?")) return;
+        LS.del(bestKey());
+        if (curId == "builtin") hideB = true;
+        else banks = banks.filter((b) => b.id != curId);
+        selectBank("");
+        resetView();
+      }
+      function delAll() {
+        if (
+          !confirm(
+            'Clean ALL test sets (the original dump and every imported set), starred questions, mistakes and saved scores?\n\nTip: use "Export backup" first if you may want them back.',
+          )
+        )
+          return;
+        try {
+          Object.keys(localStorage)
+            .filter((k) => /^oic/.test(k))
+            .forEach((k) => localStorage.removeItem(k));
+        } catch (e) {}
+        banks = [];
+        stars = {};
+        wrongPool = {};
+        hideB = true;
+        draft = [];
+        $("impStatus").textContent = "";
+        selectBank("");
+        counts();
+        resetView();
+      }
+      function restoreDefault() {
+        hideB = false;
+        selectBank("builtin");
+        resetView();
+      }
+      function resetBest() {
+        LS.del(bestKey());
+        best = 0;
+        alert("Saved best score reset.");
+      }
+      const AIPROMPT = $("aiPrompt").textContent;
+      function copyPrompt() {
+        const b = $("cpBtn");
+        const ok = () => {
+          b.textContent = "Copied ✓";
+          setTimeout(() => (b.textContent = "Copy prompt"), 1500);
+        };
+        if (navigator.clipboard)
+          navigator.clipboard.writeText(AIPROMPT).then(ok, () => {});
+        else {
+          const r = document.createRange();
+          r.selectNode($("aiPrompt"));
+          getSelection().removeAllRanges();
+          getSelection().addRange(r);
+          document.execCommand("copy");
+          ok();
+        }
+      }
+
+      /* ---------- import from file ---------- */
+      async function importFile(f) {
+        if (!f) return;
+        const st = $("impStatus");
+        st.textContent = "Reading file...";
+        let txt = "";
+        try {
+          const ext = f.name.split(".").pop().toLowerCase(),
+            buf = await f.arrayBuffer();
+          if (ext == "pdf") {
+            if (typeof pdfjsLib === "undefined")
+              throw new Error("PDF reader not loaded");
+            pdfjsLib.GlobalWorkerOptions.workerSrc =
+              "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+            const d = await pdfjsLib.getDocument({ data: buf }).promise;
+            for (let p = 1; p <= d.numPages; p++) {
+              const c = await (await d.getPage(p)).getTextContent();
+              let y = null;
+              for (const it of c.items) {
+                const yy = it.transform[5];
+                if (y !== null && Math.abs(yy - y) > 3) txt += "\n";
+                else if (y !== null) txt += " ";
+                txt += it.str;
+                y = yy;
+              }
+              txt += "\n";
+            }
+          } else if (ext == "docx") {
+            if (typeof mammoth === "undefined")
+              throw new Error("Word reader not loaded");
+            txt = (await mammoth.extractRawText({ arrayBuffer: buf })).value;
+          } else txt = new TextDecoder().decode(buf);
+        } catch (e) {
+          st.textContent =
+            "Could not read file (the PDF/Word readers need internet the first time): " +
+            e.message;
+          return;
+        }
+        draft = parseQ(txt);
+        if (!draft.length) {
+          st.textContent =
+            'No questions detected. Questions should look like "Question 1: ..." or "1. ..." followed by options.';
+          return;
+        }
+        draftName = f.name.replace(/\.\w+$/, "");
+        dFrom = 1;
+        dTo = draft.length;
+        st.textContent = "";
+        preview();
+      }
+      const BL = "[-○●•◯☐☑✓✔✅▪■□*-]",
+        OPT = new RegExp("^(?:" + BL + "|\\(?[A-Fa-f][.)])\\s*"),
+        HEAD = /^(Question\s*\d+|Q\s*\d+|\d+)\s*[:.)]\s*/i,
+        CM = /\s*(\(correct\)|\*)$/i;
+      function parseQ(txt) {
+        const bl = [];
+        let b = null;
+        for (const l of txt
+          .replace(/\r/g, "")
+          .split("\n")
+          .map((s) => s.trim())
+          .filter(Boolean)) {
+          if (HEAD.test(l)) {
+            b = [l.replace(HEAD, "")];
+            bl.push(b);
+          } else if (b) b.push(l);
+        }
+        return bl
+          .map((b) => {
+            const stem = [],
+              o = [];
+            let a = [],
+              ak = null;
+            for (const l of b) {
+              const m = l.match(
+                /^(?:correct\s*)?(?:answer|ans)s?\s*[:\-]\s*([A-F](?:\s*[,&]?\s*[A-F])*)\b/i,
+              );
+              if (m) {
+                ak = m[1].toUpperCase().match(/[A-F]/g);
+                continue;
+              }
+              if (OPT.test(l)) {
+                if (/^[●☑✓✔✅]/.test(l) || CM.test(l)) a.push(o.length);
+                o.push(l.replace(OPT, "").replace(CM, ""));
+              } else if (o.length) o[o.length - 1] += " " + l;
+              else stem.push(l);
+            }
+            if (ak)
+              a = ak
+                .map((c) => c.charCodeAt(0) - 65)
+                .filter((k) => k < o.length);
+            return { q: stem.join(" "), o, a };
+          })
+          .filter((x) => x.q && x.o.length > 1);
+      }
+      function preview() {
+        stopTimer();
+        $("timerBox").classList.add("hidden");
+        $("result").style.display = "none";
+        $("progressWrap").classList.add("hidden");
+        $("bottomActions").classList.add("hidden");
+        test = [];
+        const N = draft.length;
+        $("quiz").innerHTML =
+          `<div class="question-card"><div class="question">Review imported questions (${N} found)</div>
+<div class="small">Tick the correct answer(s) — already ticked where detected. Questions with nothing ticked are skipped.</div>
+<p><input type="text" id="setName" value="${escapeHtml(draftName)}" oninput="draftName=this.value" style="width:100%"></p>
+<div class="toolbar" style="margin-top:0"><label>Use questions from <input type="number" id="rf" min="1" max="${N}" value="${dFrom}" onchange="setRange()"> to <input type="number" id="rt" min="1" max="${N}" value="${dTo}" onchange="setRange()"> <span class="hint">of ${N}</span></label></div>
+<div class="toolbar" style="margin-top:8px"><span class="small">Quick:</span><button onclick="quickRange(10)">First 10</button><button onclick="quickRange(20)">First 20</button><button onclick="quickRange(30)">First 30</button><button onclick="quickRange(50)">First 50</button><button onclick="quickRange(0)">All</button></div>
+<div id="draftInfo" class="small" style="margin-top:10px"></div>
+<div class="actions"><button class="primary" onclick="saveDraft()">Save test set</button><button onclick="resetView()">Cancel</button></div></div><div id="draftList"></div>`;
+        renderDraft();
+        window.scrollTo({ top: 0 });
+      }
+      function setRange() {
+        const N = draft.length;
+        let f = Math.max(1, Math.min(N, +$("rf").value || 1)),
+          t = Math.max(f, Math.min(N, +$("rt").value || N));
+        dFrom = f;
+        dTo = t;
+        $("rf").value = f;
+        $("rt").value = t;
+        renderDraft();
+      }
+      function quickRange(k) {
+        dFrom = 1;
+        dTo = k ? Math.min(k, draft.length) : draft.length;
+        $("rf").value = dFrom;
+        $("rt").value = dTo;
+        renderDraft();
+      }
+      function renderDraft() {
+        $("draftList").innerHTML =
+          draft
+            .slice(dFrom - 1, dTo)
+            .map((x, i) => {
+              const qi = dFrom - 1 + i;
+              return `<div class="question-card"><div class="question">${qi + 1}. ${escapeHtml(x.q)}</div>${x.o.map((t, k) => `<label class="option"><input type="checkbox" ${x.a.includes(k) ? "checked" : ""} onchange="togDraft(${qi},${k})"><span>${escapeHtml(t)}</span></label>`).join("")}</div>`;
+            })
+            .join("") +
+          '<div class="actions"><button class="primary" onclick="saveDraft()">Save test set</button><button onclick="resetView()">Cancel</button></div>';
+        draftInfo();
+      }
+      function draftInfo() {
+        const sub = draft.slice(dFrom - 1, dTo),
+          ok = sub.filter((x) => x.a.length).length;
+        $("draftInfo").textContent =
+          `${sub.length} questions selected · ${ok} with a correct answer ticked · ${sub.length - ok} will be skipped`;
+      }
+      function togDraft(q, k) {
+        const a = draft[q].a,
+          p = a.indexOf(k);
+        p < 0 ? a.push(k) : a.splice(p, 1);
+        draftInfo();
+      }
+      function saveDraft() {
+        const bank = draft
+          .slice(dFrom - 1, dTo)
+          .filter((x) => x.a.length)
+          .map((x, i) => ({
+            num: i + 1,
+            question: x.q,
+            options: x.o.map((t, k) => ({ text: t, correct: x.a.includes(k) })),
+          }));
+        if (!bank.length)
+          return alert("Tick at least one correct answer first.");
+        const id = "c" + Date.now();
+        banks.push({ id, name: draftName || "Imported test", bank });
+        selectBank(id);
+        resetView();
+        $("impStatus").textContent =
+          "Saved " + bank.length + " questions as a new test set.";
+      }
+
+      /* ---------- starting a test ---------- */
+      function startTest() {
+        if (!BANK.length)
+          return alert(
+            "No test set. Import a file first, or restore the original.",
+          );
+        const n = Math.max(
+            1,
+            Math.min(BANK.length, +$("count").value || BANK.length),
+          ),
+          pick = $("pick").value;
+        const list =
+          pick == "random"
+            ? shuffle(BANK).slice(0, n)
+            : pick == "first"
+              ? BANK.slice(0, n)
+              : shuffle(BANK.slice(0, n));
+        begin(list, +$("mins").value || 0);
+      }
+      function retryList(list) {
+        if (!list || !list.length) return alert("Nothing to practice yet.");
+        begin(shuffle(list), Math.ceil(list.length * 1.8));
+      }
+      function startMistakes() {
+        const l = Object.values(wrongPool);
+        if (!l.length)
+          return alert(
+            "No mistakes saved yet. Questions you get wrong are collected here and removed when you answer them correctly.",
+          );
+        retryList(l);
+      }
+      function begin(list, mins) {
+        stopTimer();
+        submitted = false;
+        curMode = $("mode").value;
+        test = list.map((q) => ({
+          ...plain(q),
+          options: shuffle(
+            q.options.map((o) => ({ text: o.text, correct: !!o.correct })),
+          ),
+          answer: [],
+          checked: false,
+        }));
+        $("result").style.display = "none";
+        $("result").innerHTML = "";
+        $("progressWrap").classList.remove("hidden");
+        $("bottomActions").classList.remove("hidden");
+        $("submitBtn").textContent =
+          curMode == "study" ? "Finish & see score" : "Submit Test";
+        startedAt = Date.now();
+        render();
+        if (curMode == "exam" && mins > 0) startTimer(Math.round(mins * 60));
+        else $("timerBox").classList.add("hidden");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      /* ---------- timer ---------- */
+      function startTimer(sec) {
+        deadline = Date.now() + sec * 1000;
+        $("timerBox").classList.remove("hidden");
+        tick();
+        timerInt = setInterval(tick, 500);
+      }
+      function tick() {
+        const left = Math.max(0, Math.round((deadline - Date.now()) / 1000)),
+          b = $("timerBox");
+        b.textContent = "⏱ " + fmt(left);
+        b.classList.toggle("low", left <= 300);
+        if (left <= 0) {
+          stopTimer();
+          if (!submitted) submitTest(true);
+        }
+      }
+      function stopTimer() {
+        if (timerInt) clearInterval(timerInt);
+        timerInt = null;
+      }
+
+      /* ---------- rendering the quiz ---------- */
+      function render() {
+        const quiz = $("quiz");
+        quiz.innerHTML = "";
+        test.forEach((q, qi) => {
+          const multi = nCor(q) > 1,
+            on = !!stars[qKey(q)];
+          const card = document.createElement("div");
+          card.className = "question-card";
+          card.id = "q" + qi;
+          const options = q.options
+            .map(
+              (o, oi) => `
+<label class="option" data-q="${qi}" data-o="${oi}">
+<input type="${multi ? "checkbox" : "radio"}" name="q${qi}" value="${oi}" onchange="choose(${qi},${oi},this.checked)">
+<span><b>${String.fromCharCode(65 + oi)}.</b> ${escapeHtml(o.text)}</span>
+</label>`,
+            )
+            .join("");
+          card.innerHTML = `
+<div class="qnum"><span>Question ${qi + 1} of ${test.length}<span class="badge">Original #${q.num}${multi ? " • Select " + nCor(q) : ""}</span></span><button class="star ${on ? "on" : ""}" id="st${qi}" title="Mark as difficult" onclick="toggleStar(${qi})">${on ? "⭐" : "☆"}</button></div>
+<div class="question">${escapeHtml(q.question)}</div>
+<div>${options}</div>
+<div class="small hidden" id="exp${qi}" style="margin-top:12px"></div>
+${curMode == "study" && multi ? `<div class="actions" id="chk${qi}"><button onclick="checkQ(${qi})">Check answer</button></div>` : ""}`;
+          quiz.appendChild(card);
+        });
+        updateProgress();
+      }
+      function toggleStar(qi) {
+        const q = test[qi],
+          k = qKey(q);
+        if (stars[k]) delete stars[k];
+        else stars[k] = { ...plain(q), set: curName() };
+        saveStars();
+        const on = !!stars[k],
+          b = $("st" + qi);
+        b.classList.toggle("on", on);
+        b.textContent = on ? "⭐" : "☆";
+        counts();
+      }
+      function choose(qi, oi, checked) {
+        const q = test[qi];
+        if (submitted || q.checked) return;
+        const multi = nCor(q) > 1;
+        if (multi) {
+          if (checked) {
+            if (!q.answer.includes(oi)) q.answer.push(oi);
+          } else q.answer = q.answer.filter((x) => x !== oi);
+        } else q.answer = checked ? [oi] : [];
+        document
+          .querySelectorAll(`[data-q="${qi}"]`)
+          .forEach((x) => x.classList.remove("selected"));
+        q.answer.forEach((i) =>
+          document
+            .querySelector(`[data-q="${qi}"][data-o="${i}"]`)
+            ?.classList.add("selected"),
+        );
+        updateProgress();
+        if (curMode == "study" && !multi && q.answer.length) checkQ(qi);
+      }
+      function checkQ(qi) {
+        const q = test[qi];
+        if (q.checked || submitted) return;
+        if (!q.answer.length) return alert("Choose an answer first.");
+        q.checked = true;
+        reveal(qi);
+        updateProgress();
+      }
+      function reveal(qi) {
+        const q = test[qi],
+          ok = isCorrect(q);
+        q.options.forEach((o, oi) => {
+          const el = document.querySelector(`[data-q="${qi}"][data-o="${oi}"]`);
+          if (!el) return;
+          el.classList.add("locked");
+          const inp = el.querySelector("input");
+          if (inp) inp.disabled = true;
+          if (o.correct) el.classList.add("correct");
+          if (q.answer.includes(oi) && !o.correct) el.classList.add("wrong");
+        });
+        const e = $("exp" + qi);
+        e.classList.remove("hidden");
+        e.innerHTML =
+          `<div class="verdict ${ok ? "ok" : "no"}">${q.answer.length ? (ok ? "✓ Correct" : "✗ Wrong") : "Not answered"}</div><b>Correct answer:</b> ` +
+          q.options
+            .filter((o) => o.correct)
+            .map((o) => escapeHtml(o.text))
+            .join(" <br> ");
+        const c = $("chk" + qi);
+        if (c) c.remove();
+      }
+      function updateProgress() {
+        const answered = test.filter((q) => q.answer.length > 0).length;
+        $("bar").style.width =
+          (test.length ? (answered / test.length) * 100 : 0) + "%";
+        let t = `${answered} / ${test.length} answered`;
+        if (curMode == "study")
+          t += ` · ${test.filter((q) => q.checked && isCorrect(q)).length} correct so far`;
+        $("progressText").textContent = t;
+      }
+      function isCorrect(q) {
+        const e = q.options
+            .map((o, i) => (o.correct ? i : -1))
+            .filter((i) => i >= 0)
+            .sort((a, b) => a - b),
+          a = [...q.answer].sort((a, b) => a - b);
+        return JSON.stringify(e) === JSON.stringify(a);
+      }
+
+      /* ---------- submit + results ---------- */
+      function submitTest(auto) {
+        if (!test.length || submitted) return;
+        const unanswered = test.filter((q) => q.answer.length === 0).length;
+        if (
+          !auto &&
+          unanswered &&
+          !confirm(
+            `You have ${unanswered} unanswered question(s). Submit anyway?`,
+          )
+        )
+          return;
+        submitted = true;
+        stopTimer();
+        $("timerBox").classList.add("hidden");
+        let score = 0;
+        attemptWrong = [];
+        test.forEach((q, qi) => {
+          const ok = isCorrect(q);
+          if (ok) {
+            score++;
+            delete wrongPool[qKey(q)];
+          } else {
+            wrongPool[qKey(q)] = plain(q);
+            attemptWrong.push(plain(q));
+          }
+          reveal(qi);
+        });
+        saveWrong();
+        counts();
+        const pct = Math.round((score / test.length) * 100);
+        if (curMode == "exam" && curId && pct > best) {
+          best = pct;
+          LS.set(bestKey(), best);
+        }
+        const secs = Math.round((Date.now() - startedAt) / 1000);
+        const result = $("result");
+        result.style.display = "block";
+        result.innerHTML = `
+<div class="small">${auto ? "⏱ Time's up — " : ""}${curMode == "exam" ? "Exam" : "Study"} mode completed · time ${fmt(secs)}</div>
+<div class="score">${score} / ${test.length}</div>
+<div><b>${pct}%</b></div>
+<div class="small" style="margin-top:8px">Best exam score on this set: ${best}%</div>
+<div class="actions">
+<button class="primary" onclick="startTest()">Take Another Test</button>
+${attemptWrong.length ? `<button onclick="retryList(attemptWrong)">🔁 Retry wrong only (${attemptWrong.length})</button>` : ""}
+<button onclick="scrollToWrong()">Review Wrong Answers</button>
+</div>
+<div class="review" id="review"></div>`;
+        buildReview();
+        result.scrollIntoView({ behavior: "smooth" });
+      }
+      function buildReview() {
+        const wrong = [];
+        test.forEach((q, qi) => {
+          if (!isCorrect(q)) {
+            wrong.push(`<div class="review-item">
+<b>Question ${qi + 1} (Original #${q.num})</b>
+${escapeHtml(q.question)}<br>
+<span class="small">Your answer: ${q.answer.length ? q.answer.map((i) => escapeHtml(q.options[i].text)).join(" | ") : "Not answered"}</span><br>
+<span class="source-answer">Correct: ${q.options
+              .filter((o) => o.correct)
+              .map((o) => escapeHtml(o.text))
+              .join(" | ")}</span>
+</div>`);
+          }
+        });
+        $("review").innerHTML = wrong.length
+          ? "<h3>Review Wrong Answers</h3>" + wrong.join("")
+          : "<h3>Perfect!</h3><div class='small'>You got every question correct.</div>";
+      }
+      function scrollToWrong() {
+        document
+          .querySelector(".review-item")
+          ?.scrollIntoView({ behavior: "smooth" });
+      }
+
+      /* ---------- starred page ---------- */
+      function showStarred() {
+        if (test.length && !submitted && !confirm("Leave the current test?"))
+          return;
+        stopTimer();
+        $("timerBox").classList.add("hidden");
+        test = [];
+        submitted = false;
+        $("result").style.display = "none";
+        $("progressWrap").classList.add("hidden");
+        $("bottomActions").classList.add("hidden");
+        const arr = Object.entries(stars);
+        $("quiz").innerHTML =
+          `<div class="question-card"><div class="question">⭐ Starred questions (${arr.length})</div>
+<div class="small">${arr.length ? "These are the questions you marked as difficult, with their correct answers." : "No starred questions yet. Tap ☆ on any question while practicing to collect it here."}</div>
+<div class="actions">${arr.length ? '<button class="primary" onclick="practiceStarred()">Practice starred</button>' : ""}<button onclick="resetView()">Close</button></div></div>` +
+          arr
+            .map(
+              ([k, q]) =>
+                `<div class="question-card"><div class="qnum"><span>${escapeHtml(q.set || "")}</span><button class="star on" title="Remove star" onclick="unstar('${k}')">⭐</button></div><div class="question">${escapeHtml(q.question)}</div>${q.options.map((o) => `<div class="option ${o.correct ? "correct" : ""} locked"><span>${o.correct ? "✓ " : ""}${escapeHtml(o.text)}</span></div>`).join("")}</div>`,
+            )
+            .join("");
+        window.scrollTo({ top: 0 });
+      }
+      function unstar(k) {
+        delete stars[k];
+        saveStars();
+        counts();
+        showStarred();
+      }
+      function practiceStarred() {
+        retryList(Object.values(stars));
+      }
+
+      /* ---------- backup ---------- */
+      function exportBackup() {
+        persist();
+        saveStars();
+        saveWrong();
+        const data = {};
+        try {
+          Object.keys(localStorage)
+            .filter((k) => /^oic/.test(k))
+            .forEach((k) => (data[k] = localStorage.getItem(k)));
+        } catch (e) {}
+        const blob = new Blob(
+          [
+            JSON.stringify(
+              {
+                app: "oic-quiz",
+                v: 2,
+                exported: new Date().toISOString(),
+                data,
+              },
+              null,
+              1,
+            ),
+          ],
+          { type: "application/json" },
+        );
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download =
+          "oic-quiz-backup-" + new Date().toISOString().slice(0, 10) + ".json";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+        $("impStatus").textContent =
+          "Backup downloaded (" +
+          banks.length +
+          " imported sets, " +
+          Object.keys(stars).length +
+          " starred, " +
+          Object.keys(wrongPool).length +
+          " mistakes).";
+      }
+      async function importBackup(f) {
+        if (!f) return;
+        const st = $("impStatus");
+        try {
+          const j = JSON.parse(await f.text());
+          if (j.app !== "oic-quiz" || !j.data) throw new Error("bad");
+          const d = j.data,
+            pj = (k) => {
+              try {
+                return JSON.parse(d[k]);
+              } catch (e) {
+                return null;
+              }
+            };
+          let nb = 0;
+          (pj("oicBanks") || []).forEach((b) => {
+            if (
+              b &&
+              b.id &&
+              Array.isArray(b.bank) &&
+              !banks.some((x) => x.id == b.id)
+            ) {
+              banks.push(b);
+              nb++;
+            }
+          });
+          const s0 = Object.keys(stars).length,
+            w0 = Object.keys(wrongPool).length;
+          Object.assign(stars, pj("oicStars") || {});
+          Object.assign(wrongPool, pj("oicWrong") || {});
+          Object.keys(d)
+            .filter((k) => /^oicBestPct/.test(k))
+            .forEach((k) => LS.set(k, Math.max(+LS.get(k, 0), +d[k] || 0)));
+          saveStars();
+          saveWrong();
+          selectBank(curId);
+          counts();
+          resetView();
+          st.textContent = `Backup merged: ${nb} new test sets, ${Object.keys(stars).length - s0} new starred, ${Object.keys(wrongPool).length - w0} new mistakes.`;
+        } catch (e) {
+          st.textContent = "This is not a valid backup file.";
+        }
+      }
+
+      /* ---------- init ---------- */
+      modeChanged();
+      selectBank(curId);
+      counts();
+      resetView();
+      if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol))
+        navigator.serviceWorker.register("sw.js").catch(() => {});
+    </script>
+  </body>
+</html>
